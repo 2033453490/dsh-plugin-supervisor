@@ -6,7 +6,7 @@ import zlib from 'node:zlib'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
-const SELF = '@local/dsh-plugin-supervisor'
+const SELF = 'dsh-plugin-supervisor'
 const ROUTE = '/__plugin-supervisor'
 const DAY = 86400000
 const MINUTE = 60000
@@ -284,8 +284,6 @@ class Supervisor {
     this.owners = { key: '', data: null, promise: null }
     this.snapshotCache = { at: 0, data: null, promise: null }
     this.jobs = new Map()
-    this.clientErrors = []
-    this.actionLog = []
     this.mutationQueue = Promise.resolve()
     this.settings = readJsonSync(path.join(this.root, 'settings.json'), { inputPerM: 0, outputPerM: 0 })
     if (!this.settings || typeof this.settings !== 'object') this.settings = { inputPerM: 0, outputPerM: 0 }
@@ -1731,7 +1729,8 @@ class Supervisor {
       }
     }
     backups.sort((a, b) => b.createdAt - a.createdAt)
-    return { backups, totalBytes: backups.reduce((sum, item) => sum + safeNumber(item.bytes), 0), root }
+    const publicBackups = backups.map(({ path: _path, ...rest }) => rest)
+    return { backups: publicBackups, totalBytes: publicBackups.reduce((sum, item) => sum + safeNumber(item.bytes), 0) }
   }
 
   resolveBackupDir(id) {
@@ -1919,17 +1918,6 @@ class Supervisor {
     this.npm.at = 0
   }
 
-  recordAction(action, payload, result) {
-    this.actionLog.unshift({
-      at: Date.now(),
-      action,
-      name: payload && payload.name ? String(payload.name) : null,
-      spec: payload && payload.spec ? String(payload.spec) : null,
-      result: result === undefined ? null : result,
-    })
-    this.actionLog = this.actionLog.slice(0, 20)
-  }
-
   enqueue(task) {
     const next = this.mutationQueue.then(task, task)
     this.mutationQueue = next.catch(() => {})
@@ -2098,59 +2086,12 @@ async function handleRequest(state, req, res) {
       const data = await state.getMarket(force)
       return sendJson(res, data || { status: 'loading' })
     }
-    if (req.method === 'POST' && route === 'api/client-error') {
-      const raw = await readBody(req, 32768)
-      let payload = {}
-      try { payload = JSON.parse(raw || '{}') } catch { payload = { message: raw.slice(0, 500) } }
-      state.clientErrors.unshift({ at: Date.now(), ...payload })
-      state.clientErrors = state.clientErrors.slice(0, 10)
-      return sendJson(res, { ok: true })
-    }
-    if (req.method === 'GET' && route === 'api/client-errors') {
-      return sendJson(res, state.clientErrors)
-    }
     if (req.method === 'GET' && route === 'api/backups') {
       return sendJson(res, await state.listBackups())
-    }
-    if (req.method === 'GET' && route === 'api/action-log') {
-      return sendJson(res, state.actionLog)
     }
     if (req.method === 'GET' && route === 'api/job') {
       const job = state.jobs.get(url.searchParams.get('id') || '')
       return sendJson(res, job || { status: 'missing' })
-    }
-    if (req.method === 'GET' && route === 'api/debug/usage') {
-      const query = state.ctx.get('sessionQuery')
-      if (!query) return sendJson(res, { error: 'sessionQuery 不可用' })
-      const records = await query.listSessions()
-      const record = [...records].sort((a, b) => safeNumber(b.header.createdAt) - safeNumber(a.header.createdAt))[0]
-      if (!record) return sendJson(res, { error: '没有会话记录' })
-      try {
-        const snapshot = await query.readSession(record.header.id)
-        const summary = state.parseEvents(snapshot.events || [])
-        return sendJson(res, {
-          sessions: records.length,
-          id: String(record.header.id),
-          events: (snapshot.events || []).length,
-          days: Object.keys(summary.days || {}),
-          sample: Object.entries(summary.days || {}).slice(-1),
-          lastAt: summary.lastAt,
-        })
-      } catch (error) {
-        return sendJson(res, { id: String(record.header.id), error: errorMessage(error), stack: error && error.stack ? String(error.stack).split('\n').slice(0, 6) : [] })
-      }
-    }
-    if (req.method === 'GET' && route === 'api/debug') {
-      const inventory = await state.getInventory(true)
-      return sendJson(res, {
-        dshVersion: inventory.dshVersion,
-        counts: inventory.counts,
-        units: inventory.units.map((unit) => ({
-          id: unit.id, name: unit.name, version: unit.version, enabled: unit.enabled,
-          availability: unit.availability, rows: unit.rows.length, dir: unit.dir,
-          fiberPhase: unit.fiberPhase, installSpec: unit.installSpec, source: unit.source,
-        })),
-      })
     }
     if (req.method === 'POST' && route === 'api/action') {
       const raw = await readBody(req)
@@ -2186,7 +2127,6 @@ async function handleRequest(state, req, res) {
           job.message = '操作完成'
           job.result = result
           job.endedAt = Date.now()
-          state.recordAction(action, payload, result)
         })
         .catch((error) => {
           job.status = 'error'
@@ -2195,7 +2135,6 @@ async function handleRequest(state, req, res) {
           job.message = errorMessage(error)
           job.error = errorMessage(error)
           job.endedAt = Date.now()
-          state.recordAction(action, payload, { ok: false, thrown: job.error })
         })
       return sendJson(res, { ok: true, jobId: id })
     }

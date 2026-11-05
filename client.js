@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: '@local/dsh-plugin-supervisor',
+  id: 'dsh-plugin-supervisor',
   factory(require) {
     const React = require('react')
     const h = React.createElement
@@ -321,22 +321,6 @@ window.__ModuleLoader__.load({
         h('button', { type: 'button', className: 'psv-btn primary', onClick: onConfirm, disabled: Boolean(busy) }, busy || label))
     }
 
-    function reportClientError(kind, error, extra) {
-      try {
-        fetch(`${API}client-error`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            kind,
-            message: String(error && error.message ? error.message : error),
-            stack: String(error && error.stack ? error.stack : ''),
-            extra: extra || null,
-            url: typeof location !== 'undefined' ? location.href : '',
-          }),
-        }).catch(() => {})
-      } catch { /* diagnostics must never break the page */ }
-    }
-
     class Boundary extends React.Component {
       constructor(props) {
         super(props)
@@ -349,7 +333,6 @@ window.__ModuleLoader__.load({
 
       componentDidCatch(error, info) {
         this.setState({ info })
-        reportClientError('boundary', error, { componentStack: info && info.componentStack })
       }
 
       render() {
@@ -1226,14 +1209,6 @@ window.__ModuleLoader__.load({
 .psv-modal-mask { z-index: 75; }
 .psv-modal { width: min(460px, 94vw); background: var(--dsw-alias-bg-overlay); border: 1px solid var(--dsw-alias-border-l1); border-radius: 14px; box-shadow: 0 24px 70px rgba(0,0,0,.4); overflow: hidden; }
 .psv-modal-wide { width: min(760px, 96vw); }
-.psv-count { font-style: normal; font-size: 10px; min-width: 16px; padding: 0 5px; border-radius: 8px; background: color-mix(in srgb, var(--dsw-alias-label-primary) 12%, transparent); color: var(--dsw-alias-label-secondary); text-align: center; }
-.psv-backup-list { display: flex; flex-direction: column; gap: 6px; max-height: 52vh; overflow: auto; }
-.psv-backup { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 9px; background: color-mix(in srgb, var(--dsw-alias-label-primary) 3%, transparent); }
-.psv-backup-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.psv-backup-main b { font-size: 12px; overflow-wrap: anywhere; }
-.psv-backup-main span { font-size: 10.5px; color: var(--dsw-alias-label-tertiary); }
-.psv-backup-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.psv-backup-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
 .psv-modal-h { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--dsw-alias-border-l1); }
 .psv-modal-b { padding: 16px; }
 .psv-modal-f { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--dsw-alias-border-l1); }
