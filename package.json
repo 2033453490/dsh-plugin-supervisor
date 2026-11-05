@@ -1,10 +1,31 @@
 {
-  "name": "@local/dsh-plugin-supervisor",
-  "version": "0.1.0",
-  "private": true,
+  "name": "dsh-plugin-supervisor",
+  "version": "1.0.0",
   "type": "module",
-  "description": "Plugin Supervisor for DeepSeek Harness: health, compatibility, usage frequency, market picks and per-plugin token cost in one sidebar panel.",
+  "description": "Sidebar supervisor for DeepSeek Harness plugins: health, DSH compatibility, updates, usage frequency, version backups and per-plugin token cost.",
+  "author": "CYKshaozi",
+  "license": "MIT",
   "icon": "icon.svg",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/2033453490/dsh-plugin-supervisor.git"
+  },
+  "homepage": "https://github.com/2033453490/dsh-plugin-supervisor#readme",
+  "bugs": {
+    "url": "https://github.com/2033453490/dsh-plugin-supervisor/issues"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "cordis",
+    "plugin-manager",
+    "plugin-health",
+    "token-usage"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
@@ -16,8 +37,13 @@
     "client.js",
     "cordis.patch.yml",
     "locale/*.json",
-    "icon.svg"
+    "icon.svg",
+    "README.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

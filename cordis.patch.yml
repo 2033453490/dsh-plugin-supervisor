@@ -1,3 +1,3 @@
 - insert:
     - id: plugin-supervisor
-      name: '@local/dsh-plugin-supervisor'
+      name: 'dsh-plugin-supervisor'

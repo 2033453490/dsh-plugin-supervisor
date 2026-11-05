@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: '@local/dsh-plugin-supervisor',
+  id: 'dsh-plugin-supervisor',
   factory(require) {
     const React = require('react')
     const h = React.createElement
@@ -321,22 +321,6 @@ window.__ModuleLoader__.load({
         h('button', { type: 'button', className: 'psv-btn primary', onClick: onConfirm, disabled: Boolean(busy) }, busy || label))
     }
 
-    function reportClientError(kind, error, extra) {
-      try {
-        fetch(`${API}client-error`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            kind,
-            message: String(error && error.message ? error.message : error),
-            stack: String(error && error.stack ? error.stack : ''),
-            extra: extra || null,
-            url: typeof location !== 'undefined' ? location.href : '',
-          }),
-        }).catch(() => {})
-      } catch { /* diagnostics must never break the page */ }
-    }
-
     class Boundary extends React.Component {
       constructor(props) {
         super(props)
@@ -349,7 +333,6 @@ window.__ModuleLoader__.load({
 
       componentDidCatch(error, info) {
         this.setState({ info })
-        reportClientError('boundary', error, { componentStack: info && info.componentStack })
       }
 
       render() {
