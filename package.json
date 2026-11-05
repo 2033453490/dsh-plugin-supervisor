@@ -26,6 +26,10 @@
   "engines": {
     "node": ">=20"
   },
+  "scripts": {
+    "test": "node scripts/check-release.mjs",
+    "pack:dry": "npm pack --dry-run"
+  },
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
@@ -39,7 +43,9 @@
     "locale/*.json",
     "icon.svg",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md",
+    "scripts/check-release.mjs"
   ],
   "publishConfig": {
     "access": "public"
